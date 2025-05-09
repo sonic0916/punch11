@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>무술 수련 게임</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            margin: 20px auto;
+            background-color: #87CEEB;
+            border: 4px solid #333;
+            overflow: hidden;
+        }
+        #character {
+            position: absolute;
+            width: 40px;
+            height: 75px;
+            bottom: 50px;
+            left: 50px;
+            z-index: 10;
+        }
+        .body {
+            position: absolute;
+            width: 30px;
+            height: 40px;
+            background-color: #3366CC;
+            bottom: 0;
+            left: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .head {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #FFCC99;
+            border-radius: 50%;
+            bottom: 40px;
+            left: 10px;
+        }
+        .arm-left {
+            position: absolute;
+            width: 10px;
+            height: 30px;
+            background-color: #3366CC;
+            bottom: 15px;
+            left: 0;
+            border-radius: 3px;
+            transform-origin: top center;
+            transform: rotate(10deg);
+            transition: transform 0.2s;
+        }
+        .arm-right {
+            position: absolute;
+            width: 10px;
+            height: 30px;
+            background-color: #3366CC;
+            bottom: 15px;
+            right: 0;
+            border-radius: 3px;
+            transform-origin: top center;
+            transform: rotate(-10deg);
+            transition: transform 0.2s;
+        }
+        .hand-left {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #FFCC99;
+            border-radius: 50%;
+            bottom: 0;
+            left: 0;
+        }
+        .hand-right {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #FFCC99;
+            border-radius: 50%;
+            bottom: 0;
+            right: 0;
+        }
+        .leg-left {
+            position: absolute;
+            width: 10px;
+            height: 25px;
+            background-color: #333333;
+            bottom: -25px;
+            left: 7px;
+        }
+        .leg-right {
+            position: absolute;
+            width: 10px;
+            height: 25px;
+            background-color: #333333;
+            bottom: -25px;
+            right: 7px;
+        }
+        .lightning {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: yellow;
+            bottom: 60px;
+            left: 15px;
+            clip-path: polygon(50% 0%, 0% 100%, 50% 70%, 100% 100%);
+            transition: transform 0.3s;
+        }
+        .extended-arm {
+            position: absolute;
+            width: 10px;
+            height: 50px;
+            background-color: #3366CC;
+            display: none;
+            z-index: 12;
+            transform-origin: bottom center;
+            border-radius: 3px;
+        }
+        .obstacle {
+            position: absolute;
+            bottom: 50px;
+            z-index: 5;
+        }
+        .target {
+            position: absolute;
+            bottom: 50px;
+            z-index: 5;
+        }
+        .rock {
+            width: 48px;
+            height: 48px;
+            background-color: gray;
+            border-radius: 5px;
+        }
+        .log {
+            width: 96px;
+            height: 36px;
+            background-color: brown;
+        }
+        .board {
+            width: 72px;
+            height: 60px;
+            background-color: #8B4513;
+        }
+        .brick {
+            width: 60px;
+            height: 30px;
+            background-color: #B22222;
+        }
+        .tire {
+            width: 54px;
+            height: 54px;
+            background-color: black;
+            border-radius: 50%;
+            border: 5px solid #333;
+        }
+        .hit-effect {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            opacity: 0.8;
+            pointer-events: none;
+            animation: fadeOut 0.3s forwards;
+        }
+        .hit-red {
+            background-color: red;
+        }
+        .hit-blue {
+            background-color: blue;
+        }
+        @keyframes fadeOut {
+            from { opacity: 0.8; transform: scale(0.5); }
+            to { opacity: 0; transform: scale(2); }
+        }
+        #info-panel {
+            width: 800px;
+            margin: 10px auto;
+            padding: 10px;
+            background-color: #fff;
+            border: 2px solid #333;
+            display: flex;
+            justify-content: space-between;
+        }
+        #target-counter, #obstacle-counter, #level-info {
+            flex: 1;
+            text-align: center;
+        }
+        #game-over, #level-complete, #start-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 100;
+        }
+        #start-screen h1 {
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        #game-over, #level-complete {
+            display: none;
+        }
+        #control-panel {
+            width: 800px;
+            margin: 10px auto;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #pause-btn {
+            background-color: #FF9800;
+        }
+        #pause-btn:hover {
+            background-color: #F57C00;
+        }
+        #pause-btn.resume {
+            background-color: #2196F3;
+        }
+        #pause-btn.resume:hover {
+            background-color: #1976D2;
+        }
+        #exit-btn {
+            background-color: #F44336;
+        }
+        #exit-btn:hover {
+            background-color: #D32F2F;
+        }
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 50px;
+            background-color: #5a3921;
+        }
+        .instructions {
+            width: 800px;
+            margin: 10px auto;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .pause-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 90;
+            display: none;
+        }
+        .pause-message {
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div class="ground"></div>
+        <div id="character">
+            <div class="body"></div>
+            <div class="head"></div>
+            <div class="lightning"></div>
+            <div class="arm-left">
+                <div class="hand-left"></div>
+            </div>
+            <div class="arm-right">
+                <div class="hand-right"></div>
+            </div>
+            <div class="leg-left"></div>
+            <div class="leg-right"></div>
+            <div class="extended-arm"></div>
+        </div>
+        <div id="start-screen">
+            <h1>무술 수련 게임</h1>
+            <p>다양한 목표물을 부수며 무술 수련을 하세요!</p>
+            <p>← → 방향키: 이동 / ↑ 또는 스페이스바: 점프 / Z키: 주먹 날리기</p>
+            <button id="start-btn">게임 시작</button>
+        </div>
+        <div id="game-over">
+            <h2>게임 오버!</h2>
+            <p>장애물에 10번 맞아 수련이 중단되었습니다.</p>
+            <button onclick="restartGame()">다시 시작</button>
+        </div>
+        <div id="level-complete">
+            <h2>축하합니다!</h2>
+            <p>모든 단계의 무술 수련을 완료했습니다!</p>
+            <button onclick="restartGame()">다시 시작</button>
+        </div>
+        <div class="pause-overlay">
+            <div class="pause-message">
+                <h2>일시 정지</h2>
+                <p>계속하려면 '재개' 버튼을 누르세요</p>
+            </div>
+        </div>
+    </div>
+    <div id="info-panel">
+        <div id="level-info">
+            <h3>현재 단계: <span id="current-level">1</span></h3>
+            <p>목표: <span id="level-target">돌 5개 파괴</span></p>
+        </div>
+        <div id="target-counter">
+            <h3>파괴한 목표물: <span id="targets-destroyed">0</span>/5</h3>
+        </div>
+        <div id="obstacle-counter">
+            <h3>맞은 횟수: <span id="obstacles-hit">0</span>/10</h3>
+        </div>
+    </div>
+    <div id="control-panel">
+        <button id="start-game-btn">시작</button>
+        <button id="pause-btn">일시정지</button>
+        <button id="exit-btn">종료</button>
+    </div>
+    <div class="instructions">
+        <p>← → 방향키: 이동 / ↑ 또는 스페이스바: 점프 / Z키: 주먹 날리기</p>
+    </div>
+
+    <script>
+        // 게임 변수
+        const character = document.getElementById('character');
+        const lightning = document.querySelector('.lightning');
+        const punch = document.querySelector('.punch');
+        const gameContainer = document.getElementById('game-container');
+        const gameOver = document.getElementById('game-over');
+        const levelComplete = document.getElementById('level-complete');
+        const startScreen = document.getElementById('start-screen');
+        const pauseOverlay = document.querySelector('.pause-overlay');
+        
+        // 버튼
+        const startBtn = document.getElementById('start-btn');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const exitBtn = document.getElementById('exit-btn');
+        
+        let characterPosition = 50;
+        let isJumping = false;
+        let isPunching = false;
+        let gameRunning = false;
+        let gamePaused = false;
+        let obstaclesHit = 0;
+        let targetsDestroyed = 0;
+        let currentLevel = 1;
+        let gameSpeed = 3;
+        
+        let targetInterval;
+        let obstacleInterval;
+        let jumpInterval;
+        let punchInterval;
+        
+        // 레벨별 목표물 유형
+        const levelTargets = {
+            1: { type: 'rock', name: '돌' },
+            2: { type: 'log', name: '통나무' },
+            3: { type: 'board', name: '나무판' },
+            4: { type: 'brick', name: '벽돌' },
+            5: { type: 'tire', name: '타이어' }
+        };
+        
+        // 이벤트 리스너 설정
+        startBtn.addEventListener('click', () => {
+            startScreen.style.display = 'none';
+            startGame();
+        });
+        
+        startGameBtn.addEventListener('click', () => {
+            if (gameRunning) {
+                return;
+            }
+            
+            if (gameOver.style.display === 'block' || levelComplete.style.display === 'block') {
+                gameOver.style.display = 'none';
+                levelComplete.style.display = 'none';
+            }
+            
+            startGame();
+        });
+        
+        pauseBtn.addEventListener('click', togglePause);
+        
+        exitBtn.addEventListener('click', () => {
+            stopGame();
+            showStartScreen();
+        });
+        
+        // 시작 화면 표시
+        function showStartScreen() {
+            startScreen.style.display = 'block';
+            pauseOverlay.style.display = 'none';
+        }
+        
+        // 게임 정보 업데이트
+        function updateInfo() {
+            document.getElementById('current-level').textContent = currentLevel;
+            document.getElementById('level-target').textContent = ${levelTargets[currentLevel].name} 5개 파괴;
+            document.getElementById('targets-destroyed').textContent = targetsDestroyed;
+            document.getElementById('obstacles-hit').textContent = obstaclesHit;
+        }
+        
+        // 게임 시작
+        function startGame() {
+            initGame();
+            gameRunning = true;
+            gamePaused = false;
+            pauseBtn.textContent = '일시정지';
+            pauseBtn.classList.remove('resume');
+            
+            // 목표물과 장애물 생성 타이머 시작
+            startTargetGeneration();
+            startObstacleGeneration();
+        }
+        
+        // 게임 정지
+        function stopGame() {
+            gameRunning = false;
+            gamePaused = false;
+            pauseBtn.textContent = '일시정지';
+            pauseBtn.classList.remove('resume');
+            pauseOverlay.style.display = 'none';
+            
+            // 모든 타이머 중지
+            clearInterval(targetInterval);
+            clearInterval(obstacleInterval);
+            if (jumpInterval) clearInterval(jumpInterval);
+            if (punchInterval) clearInterval(punchInterval);
+        }
+        
+        // 일시정지 토글
+        function togglePause() {
+            if (!gameRunning) return;
+            
+            gamePaused = !gamePaused;
+            
+            if (gamePaused) {
+                // 일시정지
+                pauseBtn.textContent = '재개';
+                pauseBtn.classList.add('resume');
+                pauseOverlay.style.display = 'flex';
+                
+                // 모든 타이머 중지
+                clearInterval(targetInterval);
+                clearInterval(obstacleInterval);
+                if (jumpInterval) clearInterval(jumpInterval);
+                if (punchInterval) clearInterval(punchInterval);
+            } else {
+                // 재개
+                pauseBtn.textContent = '일시정지';
+                pauseBtn.classList.remove('resume');
+                pauseOverlay.style.display = 'none';
+                
+                // 타이머 재시작
+                startTargetGeneration();
+                startObstacleGeneration();
+            }
+        }
+        
+        // 게임 초기화
+        function initGame() {
+            obstaclesHit = 0;
+            targetsDestroyed = 0;
+            currentLevel = 1;
+            characterPosition = 50;
+            character.style.left = characterPosition + 'px';
+            character.style.bottom = '50px';
+            gameSpeed = 3;
+            isJumping = false;
+            isPunching = false;
+            
+            updateLightning();
+            updateInfo();
+            
+            // 기존 장애물과 목표물 제거
+            document.querySelectorAll('.obstacle, .target, .hit-effect').forEach(element => {
+                element.remove();
+            });
+            
+            // 화면 초기화
+            gameOver.style.display = 'none';
+            levelComplete.style.display = 'none';
+            startScreen.style.display = 'none';
+            pauseOverlay.style.display = 'none';
+        }
+        
+        // 게임 재시작
+        function restartGame() {
+            stopGame();
+            startGame();
+        }
+        
+        // 번개 크기 업데이트
+        function updateLightning() {
+            const scale = 1 + (currentLevel - 1) * 0.3;
+            lightning.style.transform = scale(${scale});
+        }
+        
+        // 목표물 생성 시작
+        function startTargetGeneration() {
+            targetInterval = setInterval(() => {
+                if (document.querySelectorAll('.target').length < 3) {
+                    createTarget();
+                }
+            }, 2000);
+        }
+        
+        // 장애물 생성 시작
+        function startObstacleGeneration() {
+            obstacleInterval = setInterval(() => {
+                if (document.querySelectorAll('.obstacle').length < 2) {
+                    createObstacle();
+                }
+            }, 3000);
+        }
+        
+        // 목표물 생성
+        function createTarget() {
+            const target = document.createElement('div');
+            target.classList.add('target');
+            
+            const targetType = levelTargets[currentLevel].type;
+            const targetElement = document.createElement('div');
+            targetElement.classList.add(targetType);
+            target.appendChild(targetElement);
+            
+            // 랜덤 위치 설정 (캐릭터에서 멀리)
+            const minDistance = 200;
+            let position;
+            do {
+                position = Math.floor(Math.random() * (gameContainer.offsetWidth - 100)) + 100;
+            } while (Math.abs(position - characterPosition) < minDistance);
+            
+            target.style.left = position + 'px';
+            gameContainer.appendChild(target);
+            
+            // 목표물 이동
+            moveElement(target);
+        }
+        
+        // 장애물 생성
+        function createObstacle() {
+            const obstacle = document.createElement('div');
+            obstacle.classList.add('obstacle');
+            
+            // 장애물 유형 설정 (현재 레벨과 다른 유형)
+            let obstacleTypes = Object.keys(levelTargets);
+            let randomType;
+            do {
+                randomType = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+            } while (randomType == currentLevel);
+            
+            const obstacleType = levelTargets[randomType].type;
+            const obstacleElement = document.createElement('div');
+            obstacleElement.classList.add(obstacleType);
+            obstacle.appendChild(obstacleElement);
+            
+            // 랜덤 위치 설정 (화면 밖에서 시작)
+            obstacle.style.left = gameContainer.offsetWidth + 'px';
+            gameContainer.appendChild(obstacle);
+            
+            // 장애물 이동
+            moveElement(obstacle, true);
+        }
+        
+        // 요소 이동 (목표물, 장애물)
+        function moveElement(element, isObstacle = false) {
+            let position = parseInt(element.style.left);
+            let direction = isObstacle ? -1 : (Math.random() > 0.5 ? 1 : -1); // 장애물은 항상 왼쪽으로, 목표물은 랜덤 방향
+            let speed = gameSpeed * (isObstacle ? 1 : 0.5); // 장애물이 더 빠르게 이동
+            
+            const moveInterval = setInterval(() => {
+                if (!gameRunning || gamePaused) {
+                    clearInterval(moveInterval);
+                    return;
+                }
+                
+                // 이동
+                position += direction * speed;
+                element.style.left = position + 'px';
+                
+                // 화면 경계에서 방향 전환 (목표물)
+                if (!isObstacle) {
+                    if (position <= 0) {
+                        direction = 1;
+                    } else if (position >= gameContainer.offsetWidth - element.offsetWidth) {
+                        direction = -1;
+                    }
+                }
+                
+                // 화면 밖으로 나간 경우 (장애물)
+                if (isObstacle && position + element.offsetWidth < 0) {
+                    clearInterval(moveInterval);
+                    element.remove();
+                }
+                
+                // 충돌 확인
+                checkCollision(element, isObstacle);
+                
+            }, 30);
+        }
+        
+        // 충돌 확인
+        function checkCollision(element, isObstacle) {
+            const characterRect = character.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
+            
+            if (
+                characterRect.right > elementRect.left &&
+                characterRect.left < elementRect.right &&
+                characterRect.bottom > elementRect.top &&
+                characterRect.top < elementRect.bottom
+            ) {
+                // 충돌 발생
+                if (isObstacle) {
+                    // 장애물에 맞음
+                    obstaclesHit++;
+                    updateInfo();
+                    createHitEffect(elementRect.left, elementRect.top, 'red');
+                    element.remove();
+                    
+                    // 게임 오버 확인
+                    if (obstaclesHit >= 10) {
+                        gameOver.style.display = 'block';
+                        stopGame();
+                    }
+                }
+            }
+        }
+        
+        // 히트 이펙트 생성
+        function createHitEffect(x, y, color) {
+            const effect = document.createElement('div');
+            effect.classList.add('hit-effect');
+            effect.classList.add(hit-${color});
+            effect.style.left = x + 'px';
+            effect.style.top = y + 'px';
+            gameContainer.appendChild(effect);
+            
+            // 일정 시간 후 제거
+            setTimeout(() => {
+                effect.remove();
+            }, 300);
+        }
+        
+        // 캐릭터 이동
+        document.addEventListener('keydown', (event) => {
+            if (!gameRunning || gamePaused) return;
+            
+            switch (event.key) {
+                case 'ArrowLeft':
+                    moveCharacter(-10);
+                    break;
+                case 'ArrowRight':
+                    moveCharacter(10);
+                    break;
+                case 'ArrowUp':
+                case ' ':
+                    if (!isJumping) jump();
+                    break;
+                case 'z':
+                case 'Z':
+                    if (!isPunching) throwPunch();
+                    break;
+                case 'Escape':
+                    togglePause();
+                    break;
+            }
+        });
+        
+        function moveCharacter(distance) {
+            characterPosition += distance;
+            
+            // 경계 확인
+            if (characterPosition < 0) characterPosition = 0;
+            if (characterPosition > gameContainer.offsetWidth - character.offsetWidth) {
+                characterPosition = gameContainer.offsetWidth - character.offsetWidth;
+            }
+            
+            character.style.left = characterPosition + 'px';
+        }
+        
+        function jump() {
+            isJumping = true;
+            let jumpHeight = 0;
+            
+            jumpInterval = setInterval(() => {
+                if (!gameRunning || gamePaused) {
+                    clearInterval(jumpInterval);
+                    return;
+                }
+                
+                if (jumpHeight < 20) {
+                    character.style.bottom = (50 + jumpHeight * 5) + 'px';
+                    jumpHeight++;
+                } else if (jumpHeight < 40) {
+                    character.style.bottom = (50 + (40 - jumpHeight) * 5) + 'px';
+                    jumpHeight++;
+                } else {
+                    clearInterval(jumpInterval);
+                    character.style.bottom = '50px';
+                    isJumping = false;
+                }
+            }, 20);
+        }
+        
+        function throwPunch() {
+            if (isPunching) return;
+            
+            isPunching = true;
+            
+            // 팔 관련 요소들
+            const armRight = document.querySelector('.arm-right');
+            const extendedArm = document.querySelector('.extended-arm');
+            
+            // 원래 팔 숨기기
+            armRight.style.visibility = 'hidden';
+            
+            // 확장된 팔 설정 및 표시
+            extendedArm.style.display = 'block';
+            extendedArm.style.right = '0px';
+            extendedArm.style.bottom = '15px';
+            extendedArm.style.height = '10px'; // 시작 높이
+            
+            // 확장된 팔 끝에 있는 손 추가
+            const extendedHand = document.createElement('div');
+            extendedHand.style.width = '10px';
+            extendedHand.style.height = '10px';
+            extendedHand.style.backgroundColor = '#FFCC99';
+            extendedHand.style.borderRadius = '50%';
+            extendedHand.style.position = 'absolute';
+            extendedHand.style.top = '0px';
+            extendedHand.style.right = '0px';
+            extendedArm.appendChild(extendedHand);
+            
+            let punchDistance = 75; // 팔이 뻗어나가는 거리
+            let punchSpeed = 10;
+            let punchLength = 10; // 시작 팔 길이
+            
+            punchInterval = setInterval(() => {
+                if (!gameRunning || gamePaused) {
+                    clearInterval(punchInterval);
+                    armRight.style.visibility = 'visible';
+                    extendedArm.style.display = 'none';
+                    extendedArm.innerHTML = '';
+                    isPunching = false;
+                    return;
+                }
+                
+                if (punchLength >= punchDistance) {
+                    // 팔 복귀
+                    punchLength -= punchSpeed;
+                    extendedArm.style.height = punchLength + 'px';
+                    
+                    if (punchLength <= 10) {
+                        clearInterval(punchInterval);
+                        armRight.style.visibility = 'visible';
+                        extendedArm.style.display = 'none';
+                        extendedArm.innerHTML = '';
+                        isPunching = false;
+                    }
+                } else {
+                    // 팔 확장
+                    punchLength += punchSpeed;
+                    extendedArm.style.height = punchLength + 'px';
+                    
+                    // 확장된 팔로 목표물, 장애물 파괴 확인
+                    checkPunchCollision();
+                }
+            }, 20);
+        }
+        
+        function checkPunchCollision() {
+            const extendedArm = document.querySelector('.extended-arm');
+            const armRect = extendedArm.getBoundingClientRect();
+            
+            // 목표물과 장애물 모두 확인
+            document.querySelectorAll('.target, .obstacle').forEach(element => {
+                const elementRect = element.getBoundingClientRect
+                    // 충돌 발생
+                    if (element.classList.contains('target')) {
+                        // 목표물 파괴
+                        targetsDestroyed++;
+                        updateInfo();
+                        createHitEffect(elementRect.left, elementRect.top, 'blue');
+                        element.remove();
+                        
+                        // 레벨 완료 확인
+                        if (targetsDestroyed >= 5) {
+                            if (currentLevel < 5) {
+                                // 다음 레벨로 이동
+                                currentLevel++;
+                                targetsDestroyed = 0;
+                                gameSpeed += 0.5;
+                                updateLightning();
+                                updateInfo();
+                            } else {
+                                // 게임 완료
+                                levelComplete.style.display = 'block';
+                                stopGame();
+                            }
+                        }
+                    } else if (element.classList.contains('obstacle')) {
+                        // 장애물 파괴
+                        createHitEffect(elementRect.left, elementRect.top, 'red');
+                        element.remove();
+                    }
+                }
+            });
+        }
+        
+        // 게임 초기화 화면 표시
+        showStartScreen();
+    </script>
+</body>
+</html>
